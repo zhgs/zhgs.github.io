@@ -13,7 +13,7 @@
 <meta property="og:site_name" content="The road of God">
 <meta property="og:description" content="简介Thrift是一个软件框架，用来进行可扩展且跨语言的服务的开发。它结合了功能强大的软件堆栈和代码生成引擎，以构建在 C++, Java, Go,Python, PHP, Ruby, Erlang, Perl, Haskell, C#, Cocoa, JavaScript, Node.js, Smalltalk, and OCaml 这些编程语言间无缝结合的、高效的服务。Thrift最初由fac">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-07-18T05:51:33.000Z">
+<meta property="og:updated_time" content="2018-07-18T06:02:09.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Thrift java入门">
 <meta name="twitter:description" content="简介Thrift是一个软件框架，用来进行可扩展且跨语言的服务的开发。它结合了功能强大的软件堆栈和代码生成引擎，以构建在 C++, Java, Go,Python, PHP, Ruby, Erlang, Perl, Haskell, C#, Cocoa, JavaScript, Node.js, Smalltalk, and OCaml 这些编程语言间无缝结合的、高效的服务。Thrift最初由fac">
@@ -342,9 +342,44 @@ public class Client {
 </code></pre><h2 id="构建工程"><a href="#构建工程" class="headerlink" title="构建工程"></a>构建工程</h2><p>打开 build.xml，编写构建配置如下。注意路径属性需要根据实际路径进行修改。</p>
 <p>build.xml</p>
 <pre><code>&lt;?xml version=&quot;1.0&quot;?&gt;
-</code></pre><project name="calc" basedir="." default="build"><br><br>    <property name="thrift.lib.dir" value="/Users/zhouguangsheng/project/study/Thrift/thrift-0.11.0/lib/java/build"><br>    <property name="thrift.compiler.dir" value="/Users/zhouguangsheng/project/study/Thrift/thrift-0.11.0/lib/java/build"><br>    <property name="interface.dir" value="${basedir}\com\cynhard\thrift\test\iface"><br><br>    <path id="master-classpath"></path><br>        <fileset dir="${thrift.lib.dir}"><br>            <include name="**\*.jar"><br>        </include></fileset><br>        <pathelement path="."><br>    <br><br>    <target name="build" description="Compile Calc"><br>        <!-- 如果单独编译thrift文件，注释下面exec这段 --><br>        <exec executable="${thrift.compiler.dir}/libthrift-0.11.0.jar"><br>            <arg line="--gen java -out ${basedir} ${interface.dir}\ICalc.thrift"><br>        </arg></exec><br>        <javac><br>            <src path="."><br>            <classpath refid="master-classpath"><br>        </classpath></src></javac><br>    </target><br><br>    <target name="run_server" description="Run server"><br>        <java fork="true" failonerror="yes" classname="com.zgs.thrift.test.server.Server"><br>            <classpath refid="master-classpath"><br>        </classpath></java><br>    </target><br><br>    <target name="run_client" description="Run client"><br>        <java fork="true" failonerror="yes" classname="com.zgs.thrift.test.client.Client"><br>            <classpath refid="master-classpath"><br>        </classpath></java><br>    </target><br><br></pathelement></property></property></property></project>
+&lt;project name=&quot;calc&quot; basedir=&quot;.&quot; default=&quot;build&quot;&gt;
 
-<p>上面的工作完成后，就可以开始构建工程了。以管理员权限打开命令提示符，切换到 项目根目录。执行以下命令编译工程：</p>
+&lt;property name=&quot;thrift.lib.dir&quot; value=&quot;/Users/zhouguangsheng/project/study/Thrift/thrift-0.11.0/lib/java/build&quot;/&gt;
+&lt;property name=&quot;thrift.compiler.dir&quot; value=&quot;/Users/zhouguangsheng/project/study/Thrift/thrift-0.11.0/lib/java/build&quot;/&gt;
+&lt;property name=&quot;interface.dir&quot; value=&quot;${basedir}\com\cynhard\thrift\test\iface&quot;/&gt;
+
+&lt;path id=&quot;master-classpath&quot;&gt;
+    &lt;fileset dir=&quot;${thrift.lib.dir}&quot;&gt;
+        &lt;include name=&quot;**\*.jar&quot;/&gt;
+    &lt;/fileset&gt;
+    &lt;pathelement path=&quot;.&quot;/&gt;
+&lt;/path&gt;
+
+&lt;target name=&quot;build&quot; description=&quot;Compile Calc&quot;&gt;
+    &lt;!-- 如果单独编译thrift文件，注释下面exec这段 --&gt;
+    &lt;exec executable=&quot;${thrift.compiler.dir}/libthrift-0.11.0.jar&quot;&gt;
+        &lt;arg line=&quot;--gen java -out ${basedir} ${interface.dir}\ICalc.thrift&quot;/&gt;
+    &lt;/exec&gt;
+    &lt;javac&gt;
+        &lt;src path=&quot;.&quot;/&gt;
+        &lt;classpath refid=&quot;master-classpath&quot;/&gt;
+    &lt;/javac&gt;
+&lt;/target&gt;
+
+&lt;target name=&quot;run_server&quot; description=&quot;Run server&quot;&gt;
+    &lt;java fork=&quot;true&quot; failonerror=&quot;yes&quot; classname=&quot;com.zgs.thrift.test.server.Server&quot;&gt;
+        &lt;classpath refid=&quot;master-classpath&quot;/&gt;
+    &lt;/java&gt;
+&lt;/target&gt;
+
+&lt;target name=&quot;run_client&quot; description=&quot;Run client&quot;&gt;
+    &lt;java fork=&quot;true&quot; failonerror=&quot;yes&quot; classname=&quot;com.zgs.thrift.test.client.Client&quot;&gt;
+        &lt;classpath refid=&quot;master-classpath&quot;/&gt;
+    &lt;/java&gt;
+&lt;/target&gt;
+
+&lt;/project&gt;
+</code></pre><p>上面的工作完成后，就可以开始构建工程了。以管理员权限打开命令提示符，切换到 项目根目录。执行以下命令编译工程：</p>
 <pre><code>ant build
 </code></pre><p>直接编译可能会不成功，thrift文件也可以单独编译，ant build.xml文件中移除，只编译java</p>
 <pre><code>thrift -gen java -out /Users/zhouguangsheng/project/study/Thrift/thriftDemo/ /Users/zhouguangsheng/project/study/Thrift/thriftDemo/com/zgs/thrift/test/iface/ICalc.thrift

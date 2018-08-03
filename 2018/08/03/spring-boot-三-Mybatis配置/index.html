@@ -5,18 +5,18 @@
   
   <title>spring boot(三) Mybatis配置 | The road of God</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="spring boot2系列文章 spring boot(一) 入门篇 spring boot(二) 配置DB spring boot(三) Mybatis配置 spring boot版本为2.0.3.RELEASE db使用mysql 本篇源码下载地址点我  简介本篇主要介绍spring boot2关于mybatis的基本配置和多数据源配置方式，阅读此章需要先了解dataSource的配置方式，">
+  <meta name="description" content="spring boot2系列文章 spring boot(一) 入门篇 spring boot(二) 配置DB spring boot(三) Mybatis配置 spring boot版本为2.0.3.RELEASE db使用mysql 本篇源码下载地址点我  简介本篇主要介绍spring boot2关于mybatis的基本配置方式，阅读此章需要先了解dataSource的配置方式，可以观看我的前">
 <meta name="keywords" content="spring boot,java,技术">
 <meta property="og:type" content="article">
 <meta property="og:title" content="spring boot(三) Mybatis配置">
 <meta property="og:url" content="http://zhgs.github.io/2018/08/03/spring-boot-三-Mybatis配置/index.html">
 <meta property="og:site_name" content="The road of God">
-<meta property="og:description" content="spring boot2系列文章 spring boot(一) 入门篇 spring boot(二) 配置DB spring boot(三) Mybatis配置 spring boot版本为2.0.3.RELEASE db使用mysql 本篇源码下载地址点我  简介本篇主要介绍spring boot2关于mybatis的基本配置和多数据源配置方式，阅读此章需要先了解dataSource的配置方式，">
+<meta property="og:description" content="spring boot2系列文章 spring boot(一) 入门篇 spring boot(二) 配置DB spring boot(三) Mybatis配置 spring boot版本为2.0.3.RELEASE db使用mysql 本篇源码下载地址点我  简介本篇主要介绍spring boot2关于mybatis的基本配置方式，阅读此章需要先了解dataSource的配置方式，可以观看我的前">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-08-03T07:23:19.000Z">
+<meta property="og:updated_time" content="2018-08-03T09:25:57.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="spring boot(三) Mybatis配置">
-<meta name="twitter:description" content="spring boot2系列文章 spring boot(一) 入门篇 spring boot(二) 配置DB spring boot(三) Mybatis配置 spring boot版本为2.0.3.RELEASE db使用mysql 本篇源码下载地址点我  简介本篇主要介绍spring boot2关于mybatis的基本配置和多数据源配置方式，阅读此章需要先了解dataSource的配置方式，">
+<meta name="twitter:description" content="spring boot2系列文章 spring boot(一) 入门篇 spring boot(二) 配置DB spring boot(三) Mybatis配置 spring boot版本为2.0.3.RELEASE db使用mysql 本篇源码下载地址点我  简介本篇主要介绍spring boot2关于mybatis的基本配置方式，阅读此章需要先了解dataSource的配置方式，可以观看我的前">
   
   
     <link rel="icon" href="/images/favicon.ico">
@@ -79,20 +79,14 @@
 <li>db使用mysql</li>
 <li>本篇源码下载地址<a href="https://github.com/zhgs/spring-boot" target="_blank" rel="noopener">点我</a></li>
 </ul>
-<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>本篇主要介绍spring boot2关于mybatis的基本配置和多数据源配置方式，阅读此章需要先了解dataSource的配置方式，可以观看我的前一篇文章 spring boot系列第二篇</p>
+<h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>本篇主要介绍spring boot2关于mybatis的基本配置方式，阅读此章需要先了解dataSource的配置方式，可以观看我的前一篇文章 spring boot系列第二篇</p>
 <h2 id="目录摘要"><a href="#目录摘要" class="headerlink" title="目录摘要"></a>目录摘要</h2><ul>
-<li>mybatis配置方式<ul>
 <li>pom依赖</li>
 <li>属性配置</li>
 <li>Mapper接口</li>
 <li>测试类</li>
 </ul>
-</li>
-</ul>
-<ul>
-<li>mybatis多数据源配置方式</li>
-</ul>
-<h3 id="mybatis配置方式"><a href="#mybatis配置方式" class="headerlink" title="mybatis配置方式"></a>mybatis配置方式</h3><p>spring boot中配置mybatis非常方便，不需要传统的xml配置，mybatis.xml文件也可以不需要，首先引入mybatis的starter包</p>
+<h2 id="mybatis基本配置"><a href="#mybatis基本配置" class="headerlink" title="mybatis基本配置"></a>mybatis基本配置</h2><p>spring boot中配置mybatis非常方便，不需要传统的xml配置，mybatis.xml文件也可以不需要，首先引入mybatis的starter包</p>
 <p><strong>pom依赖包</strong></p>
 <pre><code>&lt;dependency&gt;
     &lt;groupId&gt;org.mybatis.spring.boot&lt;/groupId&gt;
@@ -230,7 +224,14 @@ public class SpringBootMybatisApplication {
     
 <nav id="article-nav" class="article-nav">
   
-    <span id="article-nav-newer" class="article-nav-link-wrap newer"></span>
+    <a href="/2018/08/03/spring-boot-四-Mybatis多数据源配置/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          spring boot(四) Mybatis多数据源配置
+        
+      </div>
+    </a>
   
   
     <a href="/2018/07/30/spring-boot-二-db相关/" id="article-nav-older" class="article-nav-link-wrap older">

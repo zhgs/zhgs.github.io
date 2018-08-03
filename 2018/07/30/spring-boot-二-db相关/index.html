@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  
+  <title>spring boot(二) 配置DB | The road of God</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="目录摘要 DataSource配置 jdbcTemplate配置方式 自定义DataSource配置  配置DataSourceJava类库的 javax.sql.DataSource 接口 定义了一个数据库连接的规范，传统的方法是一个’DataSource’使用url及一些用户名、密码凭证信息建立一个连接，springboot集成了标准的datasource，你只需要配置相应的url等连接信息就">
+<meta name="keywords" content="spring boot,java,技术">
+<meta property="og:type" content="article">
+<meta property="og:title" content="spring boot(二) 配置DB">
+<meta property="og:url" content="http://zhgs.github.io/2018/07/30/spring-boot-二-db相关/index.html">
+<meta property="og:site_name" content="The road of God">
+<meta property="og:description" content="目录摘要 DataSource配置 jdbcTemplate配置方式 自定义DataSource配置  配置DataSourceJava类库的 javax.sql.DataSource 接口 定义了一个数据库连接的规范，传统的方法是一个’DataSource’使用url及一些用户名、密码凭证信息建立一个连接，springboot集成了标准的datasource，你只需要配置相应的url等连接信息就">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-08-03T06:02:03.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="spring boot(二) 配置DB">
+<meta name="twitter:description" content="目录摘要 DataSource配置 jdbcTemplate配置方式 自定义DataSource配置  配置DataSourceJava类库的 javax.sql.DataSource 接口 定义了一个数据库连接的规范，传统的方法是一个’DataSource’使用url及一些用户名、密码凭证信息建立一个连接，springboot集成了标准的datasource，你只需要配置相应的url等连接信息就">
+  
+  
+    <link rel="icon" href="/images/favicon.ico">
+  
+  <link rel="stylesheet" href="/css/typing.css">
+  <link rel="stylesheet" href="/css/donate.css">
+  
+</head>
+
+  
+    
+      <body>
+    
+  
+      <div id="container" class="container">
+        <article id="post-spring-boot-二-db相关" class="article article-type-post" itemscope itemprop="blogPost">
+  <header id="header" class="header">
+    <div class="mobile-nav">
+      <h1 class="nickname">GS·Z&#39;s Blog</h1>
+      <a id="menu">
+        &#9776; Menu
+      </a>
+    </div>
+    
+        <nav id="main-nav" class="main-nav nav-left">
+    
+    
+      <a class="main-nav-link" href="/">Home</a>
+    
+      <a class="main-nav-link" href="/wiki">wiki</a>
+    
+      <a class="main-nav-link" href="/archives">Archives</a>
+    
+      <a class="main-nav-link" href="/about">About</a>
+    
+  </nav>
+</header>
+
+  <hr/>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      spring boot(二) 配置DB
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry typo" itemprop="articleBody">
+      
+        <h2 id="目录摘要"><a href="#目录摘要" class="headerlink" title="目录摘要"></a>目录摘要</h2><ul>
+<li>DataSource配置</li>
+<li>jdbcTemplate配置方式</li>
+<li>自定义DataSource配置</li>
+</ul>
+<h2 id="配置DataSource"><a href="#配置DataSource" class="headerlink" title="配置DataSource"></a>配置DataSource</h2><p>Java类库的 javax.sql.DataSource 接口 定义了一个数据库连接的规范，传统的方法是一个’DataSource’使用url及一些用户名、密码凭证信息建立一个连接，springboot集成了标准的datasource，你只需要配置相应的url等连接信息就可以建立一个DataSource,在application.properties中配置如下信息</p>
+<pre><code>spring.datasource.url=jdbc:mysql://localhost:3306/test
+spring.datasource.username=root
+spring.datasource.password=
+spring.datasource.driver-class-name=com.mysql.jdbc.Driver
+</code></pre><p>配置完这些信息，一个默认的dataSource就配置好了，数据库datasource相关配置 属性来源于类org.springframework.boot.autoconfigure.jdbc.DataSourceProperties; springboot中application.properties中的属性大都来源于*Properties.java文件中，如果JdbcTemplate的配置在JdbcProperties类中，这些配置类都有一个共同的注解如下 <code>@ConfigurationProperties(prefix = &quot;spring.datasource&quot;)</code>,也可以自定义类似的属性配置类，后面自定义DataSource时会有介绍到</p>
+<pre><code>    /*
+     * Copyright 2012-2018 the original author or authors.
+     *
+     * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     *
+     *      http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+
+    package org.springframework.boot.autoconfigure.jdbc;
+
+    import java.nio.charset.Charset;
+    import java.util.LinkedHashMap;
+    import java.util.List;
+    import java.util.Map;
+    import java.util.UUID;
+
+    import javax.sql.DataSource;
+
+    import org.springframework.beans.factory.BeanClassLoaderAware;
+    import org.springframework.beans.factory.BeanCreationException;
+    import org.springframework.beans.factory.InitializingBean;
+    import org.springframework.boot.context.properties.ConfigurationProperties;
+    import org.springframework.boot.jdbc.DataSourceBuilder;
+    import org.springframework.boot.jdbc.DataSourceInitializationMode;
+    import org.springframework.boot.jdbc.DatabaseDriver;
+    import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
+    import org.springframework.util.Assert;
+    import org.springframework.util.ClassUtils;
+    import org.springframework.util.StringUtils;
+
+    /**
+     * Base class for configuration of a data source.
+     *
+     * @author Dave Syer
+     * @author Maciej Walkowiak
+     * @author Stephane Nicoll
+     * @author Benedikt Ritter
+     * @author Eddú Meléndez
+     * @since 1.1.0
+     */
+    @ConfigurationProperties(prefix = &quot;spring.datasource&quot;)
+    public class DataSourceProperties implements BeanClassLoaderAware, InitializingBean {
+
+        private ClassLoader classLoader;
+
+        /**
+         * Name of the datasource. Default to &quot;testdb&quot; when using an embedded database.
+         */
+        private String name;
+
+        /**
+         * Whether to generate a random datasource name.
+         */
+        private boolean generateUniqueName;
+
+        /**
+         * Fully qualified name of the connection pool implementation to use. By default, it
+         * is auto-detected from the classpath.
+         */
+        private Class&lt;? extends DataSource&gt; type;
+
+        /**
+         * Fully qualified name of the JDBC driver. Auto-detected based on the URL by default.
+         */
+        private String driverClassName;
+
+        /**
+         * JDBC URL of the database.
+         */
+        private String url;
+
+        /**
+         * Login username of the database.
+         */
+        private String username;
+
+        /**
+         * Login password of the database.
+         */
+        private String password;
+
+        /**
+         * JNDI location of the datasource. Class, url, username &amp; password are ignored when
+         * set.
+         */
+        private String jndiName;
+
+        /**
+         * Initialize the datasource with available DDL and DML scripts.
+         */
+        private DataSourceInitializationMode initializationMode = DataSourceInitializationMode.EMBEDDED;
+
+        /**
+         * Platform to use in the DDL or DML scripts (such as schema-${platform}.sql or
+         * data-${platform}.sql).
+         */
+        private String platform = &quot;all&quot;;
+
+        /**
+         * Schema (DDL) script resource references.
+         */
+        private List&lt;String&gt; schema;
+
+        /**
+         * Username of the database to execute DDL scripts (if different).
+         */
+        private String schemaUsername;
+
+        /**
+         * Password of the database to execute DDL scripts (if different).
+         */
+        private String schemaPassword;
+
+        /**
+         * Data (DML) script resource references.
+         */
+        private List&lt;String&gt; data;
+
+        /**
+         * Username of the database to execute DML scripts (if different).
+         */
+        private String dataUsername;
+
+        /**
+         * Password of the database to execute DML scripts (if different).
+         */
+        private String dataPassword;
+
+        /**
+         * Whether to stop if an error occurs while initializing the database.
+         */
+        private boolean continueOnError = false;
+
+        /**
+         * Statement separator in SQL initialization scripts.
+         */
+        private String separator = &quot;;&quot;;
+
+        /**
+         * SQL scripts encoding.
+         */
+        private Charset sqlScriptEncoding;
+
+        private EmbeddedDatabaseConnection embeddedDatabaseConnection = EmbeddedDatabaseConnection.NONE;
+
+        private Xa xa = new Xa();
+
+        private String uniqueName;
+
+        @Override
+        public void setBeanClassLoader(ClassLoader classLoader) {
+            this.classLoader = classLoader;
+        }
+
+        @Override
+        public void afterPropertiesSet() throws Exception {
+            this.embeddedDatabaseConnection = EmbeddedDatabaseConnection
+                    .get(this.classLoader);
+        }
+
+        /**
+         * Initialize a {@link DataSourceBuilder} with the state of this instance.
+         * @return a {@link DataSourceBuilder} initialized with the customizations defined on
+         * this instance
+         */
+        public DataSourceBuilder&lt;?&gt; initializeDataSourceBuilder() {
+            return DataSourceBuilder.create(getClassLoader()).type(getType())
+                    .driverClassName(determineDriverClassName()).url(determineUrl())
+                    .username(determineUsername()).password(determinePassword());
+        }
+
+        public String getName() {
+            return this.name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public boolean isGenerateUniqueName() {
+            return this.generateUniqueName;
+        }
+
+        public void setGenerateUniqueName(boolean generateUniqueName) {
+            this.generateUniqueName = generateUniqueName;
+        }
+
+        public Class&lt;? extends DataSource&gt; getType() {
+            return this.type;
+        }
+
+        public void setType(Class&lt;? extends DataSource&gt; type) {
+            this.type = type;
+        }
+
+        /**
+         * Return the configured driver or {@code null} if none was configured.
+         * @return the configured driver
+         * @see #determineDriverClassName()
+         */
+        public String getDriverClassName() {
+            return this.driverClassName;
+        }
+
+        public void setDriverClassName(String driverClassName) {
+            this.driverClassName = driverClassName;
+        }
+
+        /**
+         * Determine the driver to use based on this configuration and the environment.
+         * @return the driver to use
+         * @since 1.4.0
+         */
+        public String determineDriverClassName() {
+            if (StringUtils.hasText(this.driverClassName)) {
+                Assert.state(driverClassIsLoadable(),
+                        () -&gt; &quot;Cannot load driver class: &quot; + this.driverClassName);
+                return this.driverClassName;
+            }
+            String driverClassName = null;
+            if (StringUtils.hasText(this.url)) {
+                driverClassName = DatabaseDriver.fromJdbcUrl(this.url).getDriverClassName();
+            }
+            if (!StringUtils.hasText(driverClassName)) {
+                driverClassName = this.embeddedDatabaseConnection.getDriverClassName();
+            }
+            if (!StringUtils.hasText(driverClassName)) {
+                throw new DataSourceBeanCreationException(
+                        &quot;Failed to determine a suitable driver class&quot;, this,
+                        this.embeddedDatabaseConnection);
+            }
+            return driverClassName;
+        }
+
+        private boolean driverClassIsLoadable() {
+            try {
+                ClassUtils.forName(this.driverClassName, null);
+                return true;
+            }
+            catch (UnsupportedClassVersionError ex) {
+                // Driver library has been compiled with a later JDK, propagate error
+                throw ex;
+            }
+            catch (Throwable ex) {
+                return false;
+            }
+        }
+
+        /**
+         * Return the configured url or {@code null} if none was configured.
+         * @return the configured url
+         * @see #determineUrl()
+         */
+        public String getUrl() {
+            return this.url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
+        /**
+         * Determine the url to use based on this configuration and the environment.
+         * @return the url to use
+         * @since 1.4.0
+         */
+        public String determineUrl() {
+            if (StringUtils.hasText(this.url)) {
+                return this.url;
+            }
+            String databaseName = determineDatabaseName();
+            String url = (databaseName != null
+                    ? this.embeddedDatabaseConnection.getUrl(databaseName) : null);
+            if (!StringUtils.hasText(url)) {
+                throw new DataSourceBeanCreationException(
+                        &quot;Failed to determine suitable jdbc url&quot;, this,
+                        this.embeddedDatabaseConnection);
+            }
+            return url;
+        }
+
+        /**
+         * Determine the name to used based on this configuration.
+         * @return the database name to use or {@code null}
+         * @since 2.0.0
+         */
+        public String determineDatabaseName() {
+            if (this.generateUniqueName) {
+                if (this.uniqueName == null) {
+                    this.uniqueName = UUID.randomUUID().toString();
+                }
+                return this.uniqueName;
+            }
+            if (StringUtils.hasLength(this.name)) {
+                return this.name;
+            }
+            if (this.embeddedDatabaseConnection != EmbeddedDatabaseConnection.NONE) {
+                return &quot;testdb&quot;;
+            }
+            return null;
+        }
+
+        /**
+         * Return the configured username or {@code null} if none was configured.
+         * @return the configured username
+         * @see #determineUsername()
+         */
+        public String getUsername() {
+            return this.username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        /**
+         * Determine the username to use based on this configuration and the environment.
+         * @return the username to use
+         * @since 1.4.0
+         */
+        public String determineUsername() {
+            if (StringUtils.hasText(this.username)) {
+                return this.username;
+            }
+            if (EmbeddedDatabaseConnection.isEmbedded(determineDriverClassName())) {
+                return &quot;sa&quot;;
+            }
+            return null;
+        }
+
+        /**
+         * Return the configured password or {@code null} if none was configured.
+         * @return the configured password
+         * @see #determinePassword()
+         */
+        public String getPassword() {
+            return this.password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+
+        /**
+         * Determine the password to use based on this configuration and the environment.
+         * @return the password to use
+         * @since 1.4.0
+         */
+        public String determinePassword() {
+            if (StringUtils.hasText(this.password)) {
+                return this.password;
+            }
+            if (EmbeddedDatabaseConnection.isEmbedded(determineDriverClassName())) {
+                return &quot;&quot;;
+            }
+            return null;
+        }
+
+        public String getJndiName() {
+            return this.jndiName;
+        }
+
+        /**
+         * Allows the DataSource to be managed by the container and obtained via JNDI. The
+         * {@code URL}, {@code driverClassName}, {@code username} and {@code password} fields
+         * will be ignored when using JNDI lookups.
+         * @param jndiName the JNDI name
+         */
+        public void setJndiName(String jndiName) {
+            this.jndiName = jndiName;
+        }
+
+        public DataSourceInitializationMode getInitializationMode() {
+            return this.initializationMode;
+        }
+
+        public void setInitializationMode(DataSourceInitializationMode initializationMode) {
+            this.initializationMode = initializationMode;
+        }
+
+        public String getPlatform() {
+            return this.platform;
+        }
+
+        public void setPlatform(String platform) {
+            this.platform = platform;
+        }
+
+        public List&lt;String&gt; getSchema() {
+            return this.schema;
+        }
+
+        public void setSchema(List&lt;String&gt; schema) {
+            this.schema = schema;
+        }
+
+        public String getSchemaUsername() {
+            return this.schemaUsername;
+        }
+
+        public void setSchemaUsername(String schemaUsername) {
+            this.schemaUsername = schemaUsername;
+        }
+
+        public String getSchemaPassword() {
+            return this.schemaPassword;
+        }
+
+        public void setSchemaPassword(String schemaPassword) {
+            this.schemaPassword = schemaPassword;
+        }
+
+        public List&lt;String&gt; getData() {
+            return this.data;
+        }
+
+        public void setData(List&lt;String&gt; data) {
+            this.data = data;
+        }
+
+        public String getDataUsername() {
+            return this.dataUsername;
+        }
+
+        public void setDataUsername(String dataUsername) {
+            this.dataUsername = dataUsername;
+        }
+
+        public String getDataPassword() {
+            return this.dataPassword;
+        }
+
+        public void setDataPassword(String dataPassword) {
+            this.dataPassword = dataPassword;
+        }
+
+        public boolean isContinueOnError() {
+            return this.continueOnError;
+        }
+
+        public void setContinueOnError(boolean continueOnError) {
+            this.continueOnError = continueOnError;
+        }
+
+        public String getSeparator() {
+            return this.separator;
+        }
+
+        public void setSeparator(String separator) {
+            this.separator = separator;
+        }
+
+        public Charset getSqlScriptEncoding() {
+            return this.sqlScriptEncoding;
+        }
+
+        public void setSqlScriptEncoding(Charset sqlScriptEncoding) {
+            this.sqlScriptEncoding = sqlScriptEncoding;
+        }
+
+        public ClassLoader getClassLoader() {
+            return this.classLoader;
+        }
+
+        public Xa getXa() {
+            return this.xa;
+        }
+
+        public void setXa(Xa xa) {
+            this.xa = xa;
+        }
+
+        /**
+         * XA Specific datasource settings.
+         */
+        public static class Xa {
+
+            /**
+             * XA datasource fully qualified name.
+             */
+            private String dataSourceClassName;
+
+            /**
+             * Properties to pass to the XA data source.
+             */
+            private Map&lt;String, String&gt; properties = new LinkedHashMap&lt;&gt;();
+
+            public String getDataSourceClassName() {
+                return this.dataSourceClassName;
+            }
+
+            public void setDataSourceClassName(String dataSourceClassName) {
+                this.dataSourceClassName = dataSourceClassName;
+            }
+
+            public Map&lt;String, String&gt; getProperties() {
+                return this.properties;
+            }
+
+            public void setProperties(Map&lt;String, String&gt; properties) {
+                this.properties = properties;
+            }
+
+        }
+
+        static class DataSourceBeanCreationException extends BeanCreationException {
+
+            private final DataSourceProperties properties;
+
+            private final EmbeddedDatabaseConnection connection;
+
+            DataSourceBeanCreationException(String message, DataSourceProperties properties,
+                    EmbeddedDatabaseConnection connection) {
+                super(message);
+                this.properties = properties;
+                this.connection = connection;
+            }
+
+            public DataSourceProperties getProperties() {
+                return this.properties;
+            }
+
+            public EmbeddedDatabaseConnection getConnection() {
+            return this.connection;
+        }
+
+    }
+
+}
+</code></pre><h2 id="jdbcTemplate配置方式"><a href="#jdbcTemplate配置方式" class="headerlink" title="jdbcTemplate配置方式"></a>jdbcTemplate配置方式</h2><p>springboot 关于jdbTemplate单数据源的配置非常简单，只需要配置JdbcTemplate的属性，无需再xml方式注入DataSource，JdbcTemplate的属性配置对应JdbcProperties.java类，部分属性如下：</p>
+<pre><code>spring.jdbc.template.max-rows=1
+spring.jdbc.template.fetch-size=
+spring.jdbc.template.query-timeout=
+</code></pre><p>JdbcProperties.java</p>
+<pre><code>/*
+ * Copyright 2012-2018 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.springframework.boot.autoconfigure.jdbc;
+
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.convert.DurationUnit;
+
+/**
+ * Configuration properties for JDBC.
+ *
+ * @author Kazuki Shimizu
+ * @author Stephane Nicoll
+ * @since 2.0.0
+ */
+@ConfigurationProperties(prefix = &quot;spring.jdbc&quot;)
+public class JdbcProperties {
+
+private final Template template = new Template();
+
+public Template getTemplate() {
+    return this.template;
+}
+
+/**
+ * {@code JdbcTemplate} settings.
+ */
+public static class Template {
+
+    /**
+     * Number of rows that should be fetched from the database when more rows are
+     * needed. Use -1 to use the JDBC driver&apos;s default configuration.
+     */
+    private int fetchSize = -1;
+
+    /**
+     * Maximum number of rows. Use -1 to use the JDBC driver&apos;s default configuration.
+     */
+    private int maxRows = -1;
+
+    /**
+     * Query timeout. Default is to use the JDBC driver&apos;s default configuration. If a
+     * duration suffix is not specified, seconds will be used.
+     */
+    @DurationUnit(ChronoUnit.SECONDS)
+    private Duration queryTimeout;
+
+    public int getFetchSize() {
+        return this.fetchSize;
+    }
+
+    public void setFetchSize(int fetchSize) {
+        this.fetchSize = fetchSize;
+    }
+
+    public int getMaxRows() {
+        return this.maxRows;
+    }
+
+    public void setMaxRows(int maxRows) {
+        this.maxRows = maxRows;
+    }
+
+    public Duration getQueryTimeout() {
+        return this.queryTimeout;
+    }
+
+    public void setQueryTimeout(Duration queryTimeout) {
+        this.queryTimeout = queryTimeout;
+    }
+
+}
+
+}
+</code></pre><p>配置完成后就可以直接使用JdbcTemplate了，使用案例如下，也可以在github上下载我的源码 <a href="https://github.com/zhgs/spring-boot" target="_blank" rel="noopener">下载源码</a></p>
+<pre><code>package org.zhgs.demo.springboot.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.Resource;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+public class JdbcHelloWordController {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @RequestMapping(&quot;list&quot;)
+    public List&lt;Map&lt;String, Object&gt;&gt; index(){
+
+        List&lt;Map&lt;String, Object&gt;&gt; resultList =  appJdbcTemplate.queryForList(&quot;select * from user&quot;);
+        return resultList;
+    }    
+}
+</code></pre><p>本机启动后打开<a href="http://localhost:8080/list" target="_blank" rel="noopener">http://localhost:8080/list</a> 测试结果如下：表示数据库查询成功</p>
+<pre><code>[{&quot;id&quot;:1,&quot;name&quot;:&quot;zhgs_test2&quot;},{&quot;id&quot;:2,&quot;name&quot;:&quot;gs_test2&quot;}]
+</code></pre><h2 id="自定义DataSource配置"><a href="#自定义DataSource配置" class="headerlink" title="自定义DataSource配置"></a>自定义DataSource配置</h2><p>前面介绍了如果配置springboot的DataSource和JdbcTemplate，本节介绍下自定义DataSource如何配置，了解如何自定义DataSource是掌握配置多数据源的一个前提。</p>
+<h3 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h3><ul>
+<li>实例化自定义DataSource、JdbcTemplate</li>
+<li>自定义DataSource属性配置</li>
+<li>测试</li>
+<li>注解@Configuration介绍</li>
+<li>注解@Bean介绍</li>
+<li>注解@Qualifier介绍</li>
+<li>注解@ConfigurationProperties介绍</li>
+<li>注解@Primary介绍</li>
+</ul>
+<h3 id="实例化自定义DataSource、JdbcTemplate"><a href="#实例化自定义DataSource、JdbcTemplate" class="headerlink" title="实例化自定义DataSource、JdbcTemplate"></a>实例化自定义DataSource、JdbcTemplate</h3><p>新建一个类DataSourceConfig用于实例化自定义DataSource、JdbcTemplate，自定义的属性命名空间为app.datasource,配置属性时以这个为前缀</p>
+<pre><code>package org.zhgs.demo.springboot.datasource;
+
+import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import javax.sql.DataSource;
+
+@Configuration
+public class DataSourceConfig {
+
+    /*
+    @Bean(name = &quot;appDataSource&quot;)
+    @ConfigurationProperties(prefix = &quot;app.datasource&quot;)
+    @Primary // 主加载顺序优先，默认
+    @Qualifier(&quot;appDataSource&quot;) // bean别名
+    public HikariDataSource dataSource() {
+        return DataSourceBuilder.create().type(HikariDataSource.class).build();
+    }
+    */
+
+    @Bean(name = &quot;appJdbcTemplate&quot;)
+    @Primary
+    public JdbcTemplate jdbcTemplate(@Qualifier(&quot;appDataSource&quot;) DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+
+    }
+
+    @Bean(name = &quot;appDataSource&quot;)
+    @ConfigurationProperties(prefix = &quot;app.datasource&quot;)
+    @Primary // 主加载顺序优先，默认
+    @Qualifier(&quot;appDataSource&quot;) // bean别名
+    public HikariDataSource dataSource(DataSourceProperties properties) {
+        return properties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
+    }
+
+    @Bean
+    @Primary
+    @ConfigurationProperties(&quot;app.datasource&quot;)
+    public DataSourceProperties dataSourceProperties() {
+        return new DataSourceProperties();
+    }
+
+}
+</code></pre><h3 id="自定义DataSource属性配置"><a href="#自定义DataSource属性配置" class="headerlink" title="自定义DataSource属性配置"></a>自定义DataSource属性配置</h3><pre><code>app.datasource.url=jdbc:mysql://localhost:3306/test2
+app.datasource.username=root
+app.datasource.password=
+app.datasource.driver-class-name=com.mysql.jdbc.Driver
+</code></pre><p>需要注意以上配置中的app.datasource.url是使用自定义Properties属性规则时才能使用，如果不配置自定义Properties时，使用app.datasource.jdbc-url，因为HikariDataSource中没有url，只有jdbcUrl；</p>
+<pre><code>app.datasource.jdbc-url=jdbc:mysql://localhost:3306/test2
+app.datasource.username=root
+app.datasource.password=
+app.datasource.driver-class-name=com.mysql.jdbc.Driver
+</code></pre><h3 id="测试案例"><a href="#测试案例" class="headerlink" title="测试案例"></a>测试案例</h3><pre><code>package org.zhgs.demo.springboot.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.Resource;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+public class JdbcHelloWordController {
+
+    @Autowired
+    @Qualifier(&quot;appJdbcTemplate&quot;)
+    private JdbcTemplate appJdbcTemplate;    
+    /**
+     * 自定义DataSource
+     * @return
+     */
+    @RequestMapping(&quot;self-datasource-list&quot;)
+    public List&lt;Map&lt;String, Object&gt;&gt; selfDataSourceList(){
+        List&lt;Map&lt;String, Object&gt;&gt; resultList =  appJdbcTemplate.queryForList(&quot;select * from user&quot;);
+        return resultList;
+
+    }
+
+}
+</code></pre><h3 id="注解-Configuration介绍"><a href="#注解-Configuration介绍" class="headerlink" title="注解@Configuration介绍"></a>注解@Configuration介绍</h3><p>从Spring3.0，@Configuration用于定义配置类，可替换xml配置文件，被注解的类内部包含有一个或多个被@Bean注解的方法，这些方法将会被AnnotationConfigApplicationContext或AnnotationConfigWebApplicationContext类进行扫描，并用于构建bean定义，初始化Spring容器。</p>
+<p>注意：@Configuration注解的配置类有如下要求：</p>
+<p>@Configuration不可以是final类型；<br>@Configuration不可以是匿名类；<br>嵌套的configuration必须是静态类。</p>
+<p>更多介绍 <a href="https://www.cnblogs.com/duanxz/p/7493276.html" target="_blank" rel="noopener">点我</a></p>
+<h3 id="注解-Bean介绍"><a href="#注解-Bean介绍" class="headerlink" title="注解@Bean介绍"></a>注解@Bean介绍</h3><p>@Bean标注在方法上(返回某个实例的方法)，等价于spring的xml配置文件中的<bean>，作用为：注册bean对象</bean></p>
+<p><strong>注：</strong></p>
+<ul>
+<li>@Bean注解在返回实例的方法上，如果未通过@Bean指定bean的名称，则默认与标注的方法名相同； </li>
+<li>@Bean注解默认作用域为单例singleton作用域，可通过@Scope(“prototype”)设置为原型作用域； </li>
+<li>既然@Bean的作用是注册bean对象，那么完全可以使用@Component、@Controller、@Service、@Ripository等注解注册bean，当然需要配置@ComponentScan注解进行自动扫描。</li>
+</ul>
+<p><strong>@Bean下管理bean的生命周期</strong><br></p>
+<p>可以使用基于 Java 的配置来管理 bean 的生命周期。@Bean 支持两种属性，即 initMethod 和destroyMethod，这些属性可用于定义生命周期方法。在实例化 bean 或即将销毁它时，容器便可调用生命周期方法。生命周期方法也称为回调方法，因为它将由容器调用。使用 @Bean 注释注册的 bean 也支持 JSR-250 规定的标准 @PostConstruct 和 @PreDestroy 注释。如果您正在使用 XML 方法来定义 bean，那么就应该使用 bean 元素来定义生命周期回调方法。</p>
+<p><strong>@Configuation总结</strong></p>
+<ul>
+<li>@Configuation等价于<beans></beans></li>
+<li>@Bean等价于<bean></bean></li>
+<li>@ComponentScan等价于&lt;context:component-scan base-package=”com.dxz.demo”/&gt;</li>
+</ul>
+<h3 id="注解-Qualifier介绍"><a href="#注解-Qualifier介绍" class="headerlink" title="注解@Qualifier介绍"></a>注解@Qualifier介绍</h3><p>qualifier的意思是合格者,意思是在实现同一个接口的多个service，我们引入实现时需要指定其中一个，比如：</p>
+<pre><code>@Qualifier(&quot;appJdbcTemplate&quot;)
+private JdbcTemplate appJdbcTemplate;
+</code></pre><p>“appJdbcTemplate”是我们在配置bean时定义的名称，除了我们定义的还有springboot内部自带的jdbcTemplate，我们使用时需要指定我们自定义的，这个时候qualifier就发挥了这个作用。</p>
+<h3 id="注解-ConfigurationProperties介绍"><a href="#注解-ConfigurationProperties介绍" class="headerlink" title="注解@ConfigurationProperties介绍"></a>注解@ConfigurationProperties介绍</h3><p>@ConfigurationProperties主要作用：就是绑定application.properties中的属性<br>DataSourceConfig类中多次使用到了此注解，无论是dataSource还是dataSourceProperties都使用此注解与属性名前缀关联。</p>
+<h3 id="注解-Primary介绍"><a href="#注解-Primary介绍" class="headerlink" title="注解@Primary介绍"></a>注解@Primary介绍</h3><p>同qualifier场景类似，多个实现类的时候如果按类型加载类实现不指定qualifier名称时，会默认指定Primary注解，也就是优先加载。</p>
+
+      
+      <div id="donate" class="donate">
+        <a id="github" href="https://github.com/zhgs" target="_blank" class="pos-f tr3" title="Github"></a>
+	      <div id="DonateText" class="tr3">Donate</div>
+	      <ul id="donateBox" class="list pos-f tr3">
+		      <li id="PayPal"><a href="" target="_blank">PayPal</a></li>
+		      <li id="BTC" data-footnote="Copy addres and show QRCode"><button id="BTCBn"  data-clipboard-target="#btc-key" alt="Copy to clipboard">Bitcoin</button></li>
+		      <li id="AliPay">AliPay</li>
+		      <li id="WeChat">WeChat</li>
+	      </ul>
+	      <div id="QRBox" class="pos-f left-100">
+		      <div id="BTCQR" class="MainBox" style="background-image: url()"></div>
+		      <div id="AliPayQR" class="MainBox" style="background-image: url(https://avatars2.githubusercontent.com/u/15274857?s=460&amp;v=4)"></div>
+		      <div id="WeChatQR" class="MainBox" style="background-image: url(https://avatars2.githubusercontent.com/u/15274857?s=460&amp;v=4)"></div>
+	      </div>
+	      <!-- Bitcoin 账号 -->
+	      <input id="btc-key" type="text" value="" readonly="readonly">
+      </div>
+    </div>
+    <footer class="article-footer">
+      <ul class="article-meta">
+        <li>
+          <span class="label">Published Date:</span>
+          <a href="/2018/07/30/spring-boot-二-db相关/" class="article-date">
+  <time datetime="2018-07-30T09:52:30.000Z" itemprop="datePublished">2018-07-30</time>
+</a>
+
+        </li>
+        
+        
+          <li>
+            <span class="label">Tag:</span>
+            
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/java/">java</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/spring-boot/">spring boot</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/技术/">技术</a></li></ul>
+
+
+          </li>
+        
+        <hr/>
+      </ul>
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav" class="article-nav">
+  
+    <a href="/2018/08/03/spring-boot-三-Mybatis配置/" id="article-nav-newer" class="article-nav-link-wrap newer">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          spring boot(三) Mybatis配置
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/07/23/spring-boot-一-入门篇/" id="article-nav-older" class="article-nav-link-wrap older">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">spring boot(一) 入门篇</div>
+    </a>
+  
+</nav>
+
+
+  
+</article>
+
+
+
+
+
+
+      </div>
+      
+    <footer id="footer" class="post-footer footer">
+      
+      <hr/>
+      <div id="footerContent" class="footer-content">
+        <p>ipsum dolor sit amet, <strong>consectetur adipiscing elit.</strong> Fusce eget urna vitae velit <em>eleifend interdum at ac nisi. In nec ligula lacus. Cum sociis natoque</em> penatibus et magnis dis parturient montes, nascetur ridiculus mus. Sed eu cursus erat, ut dapibus quam. Post</p>
+
+
+      </div>
+    </footer>
+
+      
+
+
+
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.10/clipboard.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/typing.js"></script>
+<!--[if lt IE 9]><script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7/html5shiv.min.js"></script><![endif]-->
+
+
+
+
+
+
+
+    </div>
+  </body>
+</html>
